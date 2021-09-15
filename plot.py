@@ -10,127 +10,117 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 # %% Load Data
 
-TrainingSet_tot = np.load("./Expert_data/TrainingSet.npy")
-Labels_tot = np.load("./Expert_data/Labels.npy")
-Trajectories = np.load("./Expert_data/Trajectories.npy", allow_pickle=True).tolist()
-Rotation = np.load("./Expert_data/Rotation.npy", allow_pickle=True).tolist()
-Time = np.load("./Expert_data/Time.npy", allow_pickle=True).tolist()
-Reward_eval_human = np.load("./Expert_data/Reward_eval_human.npy")
-Real_Traj_eval_human = np.load("./Expert_data/Real_Traj_eval_human.npy", allow_pickle=True).tolist()
-Real_Reward_eval_human = np.load("./Expert_data/Real_Reward_eval_human.npy", allow_pickle=True).tolist()
-Real_Time_eval_human = np.load("./Expert_data/Real_Time_eval_human.npy", allow_pickle=True).tolist()
-Coins_location = np.load("./Expert_data/Coins_location.npy")
-    
-threshold = np.mean(Real_Reward_eval_human)
-Rand_traj = 2
-TrainingSet = Trajectories[Rand_traj]
-Labels = Rotation[Rand_traj]
-size_data = len(Trajectories[Rand_traj])
-coins_location = Coins_location[Rand_traj,:,:] 
+TrainingSet = np.load("./Expert_data/TrainingSet.npy")
+Labels = np.load("./Expert_data/Labels.npy")
+Reward = np.load("./Expert_data/Reward.npy")
 
-len_trajs = []
-for i in range(len(Trajectories)):
-    len_trajs.append(len(Trajectories[i]))
-    
-mean_len_trajs = int(np.mean(len_trajs))
+Expert_reward_mean = np.mean(Reward)
+Expert_reward_std = np.std(Reward)
 
 # %%
 
-PPO_IL = []
-TRPO_IL = []
-UATRPO_IL = []
-for i in range(8):
-    with open(f'results/FlatRL/evaluation_PPO_IL_True_GAIL_False_Mixed_False_Foraging_{i}.npy', 'rb') as f:
-        PPO_IL.append(np.load(f, allow_pickle=True))
-        
-    with open(f'results/FlatRL/evaluation_TRPO_IL_True_GAIL_False_Mixed_False_Foraging_{i}.npy', 'rb') as f:
-        TRPO_IL.append(np.load(f, allow_pickle=True))
-        
-    with open(f'results/FlatRL/evaluation_UATRPO_IL_True_GAIL_False_Mixed_False_Foraging_{i}.npy', 'rb') as f:
-        UATRPO_IL.append(np.load(f, allow_pickle=True))
+initialization = ["random", "supervised", "supervised_alternative"]
+env = "Four_Rooms"
+number_options = [1,2,3,4]
+number_options_supervised = [2,3,4]
+seed_trial = [0,1,2,3,4,5,6,7]
+
+results_random = [[] for option in number_options]
+results_supervised = [[] for option in number_options_supervised]
+results_supervised_alternative = [[] for option in number_options_supervised]
+
+
+
+init = "random"
+for option in number_options:
+    for seed in seed_trial:
+        results_random[option-number_options[0]].append(np.load(f"./results/IL_Noptions_{option}_initialization_{init}_{env}_Seed_{seed}.npy"))
+
+steps = np.linspace(len(TrainingSet),len(TrainingSet)*len(results_random[0][0]),len(results_random[0][0]))
+goal = Expert_reward_mean*np.ones(len(steps))
+std = Expert_reward_std*np.ones(len(steps))
+clrs = sns.color_palette("husl", 12)
+
+
+fig, ax = plt.subplots()
+ax.plot(steps, goal, label="Expert", c=clrs[11])
+for i in range(len(results_random)):
+    temp = np.array(results_random[i])
+    temp_mean = np.mean(temp,0)
+    temp_std = np.std(temp,0)
+    ax.plot(steps, temp_mean, label=f"IL_Noptions_{i+1}_init_{init}", c=clrs[i])
+    # ax.fill_between(steps, temp_mean-temp_std, temp_mean+temp_std, alpha=0.2, facecolor=clrs[i])
+    
+plt.legend(bbox_to_anchor=(1.04,1), borderaxespad=0)
+ax.set_xlabel('Steps')
+ax.set_ylabel('Reward')
+ax.set_title(f'{init} Init HIL')
             
-Real_Reward_eval_human = np.load("./Expert_data/Real_Reward_eval_human.npy", allow_pickle=True).tolist()    
-threshold = np.mean(Real_Reward_eval_human)
+init = "supervised"
+for option in number_options_supervised:
+    for seed in seed_trial:
+        results_supervised[option-number_options_supervised[0]].append(np.load(f"./results/IL_Noptions_{option}_initialization_{init}_{env}_Seed_{seed}.npy"))
+        
+steps = np.linspace(len(TrainingSet),len(TrainingSet)*len(results_random[0][0]),len(results_random[0][0]))
+fig, ax = plt.subplots()
+ax.plot(steps, goal, label="Expert", c=clrs[11])
+for i in range(len(results_supervised)):
+    temp = np.array(results_supervised[i])
+    temp_mean = np.mean(temp,0)
+    temp_std = np.std(temp,0)
+    ax.plot(steps, temp_mean, label=f"IL_Noptions_{i+2}_init_{init}", c=clrs[i])
+    # ax.fill_between(steps, temp_mean-temp_std, temp_mean+temp_std, alpha=0.2, facecolor=clrs[i])
     
+plt.legend(bbox_to_anchor=(1.04,1), borderaxespad=0)
+ax.set_xlabel('Steps')
+ax.set_ylabel('Reward')
+ax.set_title(f'{init} Init HIL')
+
+
+init = "supervised_alternative"          
+for option in number_options_supervised:
+    for seed in seed_trial:
+        results_supervised_alternative[option-number_options_supervised[0]].append(np.load(f"./results/IL_Noptions_{option}_initialization_{init}_{env}_Seed_{seed}.npy"))          
+            
+steps = np.linspace(len(TrainingSet),len(TrainingSet)*len(results_random[0][0]),len(results_random[0][0]))
+fig, ax = plt.subplots()
+ax.plot(steps, goal, label="Expert", c=clrs[11])
+for i in range(len(results_supervised_alternative)):
+    temp = np.array(results_supervised_alternative[i])
+    temp_mean = np.mean(temp,0)
+    temp_std = np.std(temp,0)
+    ax.plot(steps, temp_mean, label=f"IL Noptions: {i+2}, init: {init}", c=clrs[i])
+    # ax.fill_between(steps, temp_mean-temp_std, temp_mean+temp_std, alpha=0.2, facecolor=clrs[i])
     
-# %%
-
-steps = np.linspace(0,6e6,len(PPO_IL[0]))
-Human_average_performance = threshold*np.ones((len(steps),))
-
-fig, ax = plt.subplots()
-clrs = sns.color_palette("husl", 9)
-ax.plot(steps, PPO_IL[0], label='PPO IL 0', c=clrs[0])
-ax.plot(steps, PPO_IL[1], label='PPO IL 1', c=clrs[1])
-ax.plot(steps, PPO_IL[2], label='PPO IL 2', c=clrs[2])
-ax.plot(steps, PPO_IL[3], label='PPO IL 3', c=clrs[3])
-ax.plot(steps, PPO_IL[4], label='PPO IL 4', c=clrs[4])
-ax.plot(steps, PPO_IL[5], label='PPO IL 5', c=clrs[5])
-ax.plot(steps, PPO_IL[6], label='PPO IL 6', c=clrs[6])
-ax.plot(steps, PPO_IL[7], label='PPO IL 7', c=clrs[7])
-ax.plot(steps, Human_average_performance, "--", label='Humans', c=clrs[8])
 plt.legend(bbox_to_anchor=(1.04,1), borderaxespad=0)
-ax.set_ylim([0,300])
 ax.set_xlabel('Steps')
 ax.set_ylabel('Reward')
-ax.set_title('PPO')
+ax.set_title(f'{init} Init HIL')
 
-fig, ax = plt.subplots()
-clrs = sns.color_palette("husl", 9)
-ax.plot(steps, TRPO_IL[0], label='TRPO IL 0', c=clrs[0])
-ax.plot(steps, TRPO_IL[1], label='TRPO IL 1', c=clrs[1])
-ax.plot(steps, TRPO_IL[2], label='TRPO IL 2', c=clrs[2])
-ax.plot(steps, TRPO_IL[3], label='TRPO IL 3', c=clrs[3])
-ax.plot(steps, TRPO_IL[4], label='TRPO IL 4', c=clrs[4])
-ax.plot(steps, TRPO_IL[5], label='TRPO IL 5', c=clrs[5])
-ax.plot(steps, TRPO_IL[6], label='TRPO IL 6', c=clrs[6])
-ax.plot(steps, TRPO_IL[7], label='TRPO IL 7', c=clrs[7])
-ax.plot(steps, Human_average_performance, "--", label='Humans', c=clrs[8])
-plt.legend(bbox_to_anchor=(1.04,1), borderaxespad=0)
-ax.set_ylim([0,300])
-ax.set_xlabel('Steps')
-ax.set_ylabel('Reward')
-ax.set_title('TRPO')
 
-fig, ax = plt.subplots()
-clrs = sns.color_palette("husl", 9)
-ax.plot(steps, UATRPO_IL[0], label='UATRPO IL 0', c=clrs[0])
-ax.plot(steps, UATRPO_IL[1], label='UATRPO IL 1', c=clrs[1])
-ax.plot(steps, UATRPO_IL[2], label='UATRPO IL 2', c=clrs[2])
-ax.plot(steps, UATRPO_IL[3], label='UATRPO IL 3', c=clrs[3])
-ax.plot(steps, UATRPO_IL[4], label='UATRPO IL 4', c=clrs[4])
-ax.plot(steps, UATRPO_IL[5], label='UATRPO IL 5', c=clrs[5])
-ax.plot(steps, UATRPO_IL[6], label='UATRPO IL 6', c=clrs[6])
-ax.plot(steps, UATRPO_IL[7], label='UATRPO IL 7', c=clrs[7])
-ax.plot(steps, Human_average_performance, "--", label='Humans', c=clrs[8])
-plt.legend(bbox_to_anchor=(1.04,1), borderaxespad=0)
-ax.set_ylim([0,300])
-ax.set_xlabel('Steps')
-ax.set_ylabel('Reward')
-ax.set_title('UATRPO')
+for i in range(len(results_supervised_alternative)):
+    fig, ax = plt.subplots()
+    ax.plot(steps, goal, label="Expert", c=clrs[11])
+    init = "supervised_alternative"  
+    temp = np.array(results_supervised_alternative[i])
+    temp_mean = np.mean(temp,0)
+    temp_std = np.std(temp,0)
+    ax.plot(steps, temp_mean, label=f"IL Noptions: {i+2}, init: {init}", c=clrs[0])
+    init = "supervised"
+    temp = np.array(results_supervised[i])
+    temp_mean = np.mean(temp,0)
+    temp_std = np.std(temp,0)
+    ax.plot(steps, temp_mean, label=f"IL Noptions: {i+2}, init: {init}", c=clrs[1])    
+    init = "random"
+    temp = np.array(results_random[i])
+    temp_mean = np.mean(temp,0)
+    temp_std = np.std(temp,0)
+    ax.plot(steps, temp_mean, label=f"IL Noptions: {i+2}, init: {init}", c=clrs[2]) 
+    plt.legend(bbox_to_anchor=(1.04,1), borderaxespad=0)
+    ax.set_xlabel('Steps')
+    ax.set_ylabel('Reward')
+    ax.set_title(f'Noptions: {i+2}, HIL')
 
-# %%
+    
 
-PPO_mean = np.mean(np.array(PPO_IL),0)
-PPO_std = np.std(np.array(PPO_IL),0)
-
-TRPO_mean = np.mean(np.array(TRPO_IL),0)
-TRPO_std = np.std(np.array(TRPO_IL),0)
-
-UATRPO_mean = np.mean(np.array(UATRPO_IL),0)
-UATRPO_std = np.std(np.array(UATRPO_IL),0)
-
-fig, ax = plt.subplots()
-clrs = sns.color_palette("husl", 9)
-ax.plot(steps, PPO_mean, label='PPO', c=clrs[0])
-ax.fill_between(steps, PPO_mean-PPO_std, PPO_mean+PPO_std, alpha=0.2, facecolor=clrs[0])
-ax.plot(steps, TRPO_mean, label='TRPO', c=clrs[1])
-ax.fill_between(steps, TRPO_mean-TRPO_std, TRPO_mean+TRPO_std, alpha=0.2, facecolor=clrs[1])
-ax.plot(steps, UATRPO_mean, label='UATRPO', c=clrs[3])
-ax.fill_between(steps, UATRPO_mean-UATRPO_std, UATRPO_mean+UATRPO_std, alpha=0.2, facecolor=clrs[3])
-ax.plot(steps, Human_average_performance, "--", label='Humans', c=clrs[2])
-plt.legend(bbox_to_anchor=(1.04,1), borderaxespad=0)
-ax.set_ylim([0,300])
-ax.set_xlabel('Steps')
-ax.set_ylabel('Reward')
-ax.set_title('Comparison')
+    

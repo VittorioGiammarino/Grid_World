@@ -10,12 +10,15 @@ import numpy as np
 
 import World
 
+if not os.path.exists("./Figures"):
+    os.makedirs("./Figures")
+
 env = World.Four_Rooms.Environment()
-env.PlotMap()
+env.PlotMap("./Figures/map")
 Expert = World.Four_Rooms.Optimal_Expert()
 Expert.ComputeStageCosts()
 Expert.ValueIteration()
-Expert.PlotPolicy()
+Expert.PlotPolicy("./Figures/optimal_policy")
 
 sim = World.Four_Rooms.Simulation()
 seed = 0

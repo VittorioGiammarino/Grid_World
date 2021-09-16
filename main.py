@@ -29,7 +29,7 @@ def IL(env, args, seed):
     TrainingSet = np.load("./Expert_data/TrainingSet.npy", allow_pickle=True)
     Labels = np.load("./Expert_data/Labels.npy", allow_pickle=True)
     
-    state_samples, action_samples, encoding_info = Encode_Data(TrainingSet, Labels)
+    state_samples, action_samples, encoding_info = Encode_Data(TrainingSet[0:args.size_data_set,:], Labels[0:args.size_data_set])
         
     state_dim = state_samples.shape[1]
     action_dim = env.action_size
@@ -52,7 +52,7 @@ def IL(env, args, seed):
     Agent_BatchHIL_torch = BatchBW(**kwargs)
     
     if args.initialization == "supervised":
-        supervisor = Supervised_options_init(env, TrainingSet)
+        supervisor = Supervised_options_init(env, TrainingSet[0:args.size_data_set,:])
         epochs = args.init_supervised_epochs
         Options = supervisor.Options(args.number_options)
         Agent_BatchHIL_torch.pretrain_pi_hi(epochs, Options)
@@ -61,7 +61,7 @@ def IL(env, args, seed):
             Agent_BatchHIL_torch.pretrain_pi_b(epochs, Labels_b[i], i)
             
     if args.initialization == "supervised_alternative":
-        supervisor = Supervised_options_init(env, TrainingSet)
+        supervisor = Supervised_options_init(env, TrainingSet[0:args.size_data_set,:])
         epochs = args.init_supervised_epochs
         Options = supervisor.Options_alternative(args.number_options)
         Agent_BatchHIL_torch.pretrain_pi_hi(epochs, Options)
@@ -96,7 +96,7 @@ def IL(env, args, seed):
 def train(env, args, seed): 
     
     # Set seeds
-    env.seed(seed)
+    env.Seed(seed)
     torch.manual_seed(seed)
     np.random.seed(seed)
     
@@ -115,7 +115,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     #General
     parser.add_argument("--number_options", default=4, type=int)     # number of options
-    parser.add_argument("--initialization", default="supervised_alternative")     # supervised
+    parser.add_argument("--initialization", default="random")     # random, supervised, supervised_alternative
     parser.add_argument("--init_supervised_epochs", default=200, type=int)    # supervised
     parser.add_argument("--policy", default="UATRPO")                   # Policy name (TD3, DDPG or OurDDPG)
     parser.add_argument("--seed", default=0, type=int)               # Sets Gym, PyTorch and Numpy seeds
@@ -125,6 +125,7 @@ if __name__ == "__main__":
     parser.add_argument("--max_iter", default=200, type=int)    # Max iteration to run training
     #IL
     parser.add_argument("--IL", default=True, type=bool)         # Batch size for HIL
+    parser.add_argument("--size_data_set", default=2000, type=int)   
     parser.add_argument("--batch_size_IL", default=32, type=int)         # Batch size for HIL
     parser.add_argument("--maximization_epochs_IL", default=10, type=int) # Optimization epochs HIL
     parser.add_argument("--l_rate_IL", default=0.001, type=float)         # Optimization epochs HIL
@@ -142,22 +143,34 @@ if __name__ == "__main__":
     parser.add_argument("--evaluation_max_n_steps", default = env._max_episode_steps, type=int)
     args = parser.parse_args()
     
-    file_name = f"IL_{args.IL}_options_{args.number_options}_initialization_{args.initialization}_{args.env}_{args.seed}"
-    print("---------------------------------------")
-    print(f"IL: {args.IL}, Noptions: {args.number_options}, Initialization: {args.initialization}, Env: {args.env}, Seed: {args.seed}")
-    print("---------------------------------------")
-        
-    if not os.path.exists("./results"):
-        os.makedirs("./results")
-               
-    if not os.path.exists(f"./models"):
-        os.makedirs(f"./models")
+    init = ["supervised", "supervised_alternative"]
+    
+    for initialization in init:
+        args.initialization = initialization
+        for options in range(2,5):
+            args.number_options = options
+            
+            # if args.number_options==1 and args.initialization == "supervised":
+            #     break
+            # elif args.number_options==1 and args.initialization == "supervised_alternative":
+            #     break
+    
+            file_name = f"IL_{args.IL}_options_{args.number_options}_initialization_{args.initialization}_{args.env}_{args.seed}"
+            print("---------------------------------------")
+            print(f"IL: {args.IL}, Noptions: {args.number_options}, Initialization: {args.initialization}, Env: {args.env}, Seed: {args.seed}")
+            print("---------------------------------------")
                 
-    # evaluations, policy = train(env, args, args.seed)
-    
-    train(env, args, args.seed)
-    
-    # if args.save_model: 
-    #     np.save(f"./results/evaluation_{file_name}", evaluations)
-    #     policy.save_actor(f"./models/{file_name}")
+            if not os.path.exists("./results"):
+                os.makedirs("./results")
+                       
+            if not os.path.exists(f"./models"):
+                os.makedirs(f"./models")
+                        
+            # evaluations, policy = train(env, args, args.seed)
+            
+            train(env, args, args.seed)
+            
+            # if args.save_model: 
+            #     np.save(f"./results/evaluation_{file_name}", evaluations)
+            #     policy.save_actor(f"./models/{file_name}")
 

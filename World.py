@@ -12,7 +12,7 @@ import matplotlib.animation as animation
 
 class Four_Rooms:
     class Environment:
-        def __init__(self, reward_coordinate = np.array([[10,10], [10,0], [0,0], [0,10]]), reward_sequence = np.array([0,1,2,3]), init_state = np.array([0,0,0]), max_episode_steps = 200):
+        def __init__(self, reward_coordinate = np.array([[10,10], [10,0], [0,0], [0,10]]), reward_sequence = np.array([0,1,2,3]), init_state = np.array([0,0,0]), max_episode_steps = 1000):
             self.Nc = 10 #Time steps required to bring drone to base when it crashes
             self.P_WIND = 0.1 #Gust of wind probability
             self.FREE = 0
@@ -173,7 +173,7 @@ class Four_Rooms:
             self.P = P
             
             
-        def PlotMap(self):
+        def PlotMap(self, name):
             mapsize = self.map.shape
             #count walls
             nwalls=0;
@@ -198,9 +198,10 @@ class Four_Rooms:
             plt.gca().set_aspect('equal', adjustable='box')
             plt.axis('off')
             plt.draw()
+            plt.savefig(name +'.pdf', format='pdf')
                 
                   
-        def seed(self, seed):
+        def Seed(self, seed):
             self.seed = seed
             np.random.seed(self.seed)
                 
@@ -460,7 +461,7 @@ class Four_Rooms:
             self.optimal_policy = optimal_policy
             self.optimal_value = optimal_value
                 
-        def PlotPolicy(self):
+        def PlotPolicy(self, name):
             
             for z in range(self.nReward):
                 
@@ -503,6 +504,7 @@ class Four_Rooms:
                 plt.gca().set_aspect('equal', adjustable='box')
                 plt.axis('off')
                 plt.draw()
+                plt.savefig(name +f'_reward_{z}.pdf', format='pdf')
                 
                 
     class Simulation:

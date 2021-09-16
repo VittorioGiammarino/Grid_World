@@ -34,11 +34,11 @@ results_supervised_alternative = [[] for option in number_options_supervised]
 init = "random"
 for option in number_options:
     for seed in seed_trial:
-        results_random[option-number_options[0]].append(np.load(f"./results/IL_Noptions_{option}_initialization_{init}_{env}_Seed_{seed}.npy"))
+        results_random[option-number_options[0]].append(np.load(f"./results/IL_Noptions_{option}_initialization_{init}_{env}_Seed_{seed}.npy")/Expert_reward_mean)
 
-steps = np.linspace(len(TrainingSet),len(TrainingSet)*len(results_random[0][0]),len(results_random[0][0]))
-goal = Expert_reward_mean*np.ones(len(steps))
-std = Expert_reward_std*np.ones(len(steps))
+steps = np.linspace(2000,2000*len(results_random[0][0]),len(results_random[0][0]))
+goal = (Expert_reward_mean/Expert_reward_mean)*np.ones(len(steps))
+std = (Expert_reward_std/Expert_reward_mean)*np.ones(len(steps))
 clrs = sns.color_palette("husl", 12)
 
 
@@ -59,9 +59,9 @@ ax.set_title(f'{init} Init HIL')
 init = "supervised"
 for option in number_options_supervised:
     for seed in seed_trial:
-        results_supervised[option-number_options_supervised[0]].append(np.load(f"./results/IL_Noptions_{option}_initialization_{init}_{env}_Seed_{seed}.npy"))
+        results_supervised[option-number_options_supervised[0]].append(np.load(f"./results/IL_Noptions_{option}_initialization_{init}_{env}_Seed_{seed}.npy")/Expert_reward_mean)
         
-steps = np.linspace(len(TrainingSet),len(TrainingSet)*len(results_random[0][0]),len(results_random[0][0]))
+steps = np.linspace(2000,2000*len(results_random[0][0]),len(results_random[0][0]))
 fig, ax = plt.subplots()
 ax.plot(steps, goal, label="Expert", c=clrs[11])
 for i in range(len(results_supervised)):
@@ -80,9 +80,9 @@ ax.set_title(f'{init} Init HIL')
 init = "supervised_alternative"          
 for option in number_options_supervised:
     for seed in seed_trial:
-        results_supervised_alternative[option-number_options_supervised[0]].append(np.load(f"./results/IL_Noptions_{option}_initialization_{init}_{env}_Seed_{seed}.npy"))          
+        results_supervised_alternative[option-number_options_supervised[0]].append(np.load(f"./results/IL_Noptions_{option}_initialization_{init}_{env}_Seed_{seed}.npy")/Expert_reward_mean)          
             
-steps = np.linspace(len(TrainingSet),len(TrainingSet)*len(results_random[0][0]),len(results_random[0][0]))
+steps = np.linspace(2000,2000*len(results_random[0][0]),len(results_random[0][0]))
 fig, ax = plt.subplots()
 ax.plot(steps, goal, label="Expert", c=clrs[11])
 for i in range(len(results_supervised_alternative)):
